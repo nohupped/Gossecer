@@ -36,7 +36,7 @@ func StartUdpServer(host string, port int, wg *sync.WaitGroup)  {
 }
 
 func handleUDP(conn *net.UDPConn) {
-	buffer := make([]byte, 1024)
+	buffer := make([]byte, 10240) // TODO check for end of line and if not, append to the existing byte array
 	jsonstring := new(Jsondata)
 	//jsonstring := make(map[string]Jsondata)
 	n, addr, err := conn.ReadFromUDP(buffer)
