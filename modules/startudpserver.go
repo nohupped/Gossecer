@@ -5,7 +5,18 @@ import (
 	"net"
 	"strconv"
 	"sync"
+	"encoding/json"
+	"fmt"
 )
+
+type Jsondata struct {
+	Crit           int `json:"crit"`
+	Id             int `json:"id"`
+	Component      string `json:"component"`
+	Classification string `json:"classification"`
+	Description    string `json:"description"`
+	Message        string `json:"message"`
+}
 var udplogger *GoLogger.LogIt
 
 func StartUdpServer(host string, port int, wg *sync.WaitGroup)  {
@@ -26,8 +37,13 @@ func StartUdpServer(host string, port int, wg *sync.WaitGroup)  {
 
 func handleUDP(conn *net.UDPConn) {
 	buffer := make([]byte, 1024)
+	jsonstring := new(Jsondata)
+	//jsonstring := make(map[string]Jsondata)
 	n, addr, err := conn.ReadFromUDP(buffer)
 	udplogger.Info.Println("Client: ", addr)
 	CheckError(err)
 	udplogger.Info.Println(string(buffer[:n]))
+	fmt.Println(string(buffer[36:n]))
+	json.Unmarshal(buffer[36:n], &jsonstring)
+	fmt.Println(jsonstring)
 }
