@@ -37,6 +37,8 @@ func (d *Jsondata) JsondataNormalize(regexps []*regexp.Regexp)  {
 var udplogger *GoLogger.LogIt
 var syshostname string
 
+// StartUDPServer starts a UDP server on the port to which OSSEC is sending datagrams, reads it,
+// unmarshals it into the Jsondata struct and writes it to the itemschan.
 func StartUdpServer(host string, port int, hostname string, itemschan chan *Jsondata, wg *sync.WaitGroup)  {
 	syshostname = hostname
 	udplogger = GoLogger.New("/var/log/gossecer_udp.log")
