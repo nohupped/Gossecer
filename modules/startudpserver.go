@@ -16,6 +16,7 @@ type Jsondata struct {
 	Classification string `json:"classification"`
 	Description    string `json:"description"`
 	Message        string `json:"message"`
+	message string // normalised message
 }
 var udplogger *GoLogger.LogIt
 var syshostname string

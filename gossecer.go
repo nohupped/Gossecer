@@ -6,21 +6,45 @@ import (
 	"flag"
 	"sync"
 	"os"
-//	"fmt"
+	"regexp"
 )
 func main() {
+	// Flags and Variable declaration
 	mylogger := GoLogger.New("/var/log/gossecer.log")
 	defer mylogger.Close()
 	hostname, err := os.Hostname()
 	modules.CheckError(err)
-
-	configfileparam := flag.String("config", "/var/ossec/etc/ossec.conf", "Ossec main configuration file" +
-		" where syslog_output is defined.")
-	redisServer := flag.String("redisServer", "localhost", "redis server hostname or IP")
-	redisPort := flag.Int("redisPort", 6379, "Port at which redis server is listening")
+	configfileparam := flag.String("config", "/etc/gossec.conf", "The program's main configuration file")
 	flag.Parse()
-	mylogger.Info.Println("Parsing ", *configfileparam)
-	host, ip :=modules.GetConfig(configfileparam)
+	// Main config file
+	configfile, err := modules.GetConfig(*configfileparam)
+	modules.CheckError(err)
+	// Get OSSec's configfile
+	OSSecConfGlobal, err := configfile.GetSection("ossec")
+	modules.CheckError(err)
+	ossecConf, err := OSSecConfGlobal.GetKey("ConfFile")
+	modules.CheckError(err)
+
+	// Get Redis Config file
+	RedisConfGlobal, err := configfile.GetSection("redis")
+	redisServer, err := RedisConfGlobal.GetKey("Server")
+	modules.CheckError(err)
+	redisPort, err := RedisConfGlobal.GetKey("Port")
+	modules.CheckError(err)
+
+	// Filters
+	FiltersGlobal, err := configfile.GetSection("filters")
+	modules.CheckError(err)
+	filters_keys := FiltersGlobal.Keys()
+	var regexps []*regexp.Regexp
+
+	for _, i := range filters_keys {
+		regexps = append(regexps, regexp.MustCompile(i.MustString("")))
+	}
+	// End of variable declaration
+
+	mylogger.Info.Println("Parsing ", ossecConf.String())
+	host, ip :=modules.GetOSSecConfig(ossecConf.MustString("/var/ossec/etc/ossec.conf"))
 
 	mylogger.Info.Println("Starting UDP server on ", host, ip, "for", hostname)
 	itemschan := make(chan *modules.Jsondata, 1024)
@@ -29,7 +53,7 @@ func main() {
 	go modules.StartUdpServer(host, ip, hostname, itemschan, wg)
 	go func() {
 		for ; ; {
-			modules.PutToRedis(redisServer, redisPort, itemschan)
+			modules.PutToRedis(redisServer.MustString("localhost"), redisPort.MustString("6379"),  regexps, itemschan)
 		}
 	}()
 	wg.Wait()
