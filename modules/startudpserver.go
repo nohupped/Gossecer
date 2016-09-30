@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"bytes"
 	"regexp"
-	"fmt"
 )
 
 // Jsondata struct is used to populate from the ossec forwarded udp datagrams
@@ -25,12 +24,11 @@ type Jsondata struct {
 	NormalizedMessage string // normalised message
 }
 
-// JsondataNormalize will read the Message variable in the struct Jsondata, normalize it and
+// JsondataNormalize method will read the Message variable in the struct Jsondata, normalize it and
 // puts the normalized string into NormalizedMessage field.
 func (d *Jsondata) JsondataNormalize(regexps []*regexp.Regexp)  {
 	for _, i := range regexps {
-		// Todo
-		fmt.Println(i)
+		d.NormalizedMessage = i.ReplaceAllString(d.Message, "")
 	}
 }
 
@@ -57,6 +55,7 @@ func StartUdpServer(host string, port int, hostname string, itemschan chan *Json
 
 }
 
+// handleUDP will handle the datagram by unmarshalling it to the Jsondata struct.
 func handleUDP(conn *net.UDPConn) *Jsondata{
 	buffer := make([]byte, 65507)
 	jsonstring := new(Jsondata)

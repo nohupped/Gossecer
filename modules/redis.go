@@ -2,7 +2,6 @@ package modules
 
 import (
 	"gopkg.in/redis.v4"
-	"strconv"
 	"github.com/nohupped/GoLogger"
 	"fmt"
 	"crypto/md5"
@@ -31,20 +30,20 @@ var redisClient *redis.Client
 
 // PutToRedis will call connectRedis to establish a connection, and use the
 // returned client object to put the struct values into redis after applying filters and ttl.
-// The key to redis would be an md5hash of the normalized message + the hostname, and the values
+// The key to redis would be an md5hash of the hostname + the normalized message, and the values
 // are a COUNTER which is HIncrBy incremented, upon each occurance of the same key, and the value would be
 // a key-value pair of Component and non-normalized Message.
 func PutToRedis(redisServer string, redisPort string, filters []*regexp.Regexp, itemschan chan *Jsondata)  {
 	redisLogger = GoLogger.New("/var/log/gossecer_redis.log")
 
-	fmt.Println("filters are ", filters)
 	if redisClient == nil {
 		redisClient = connectRedis(redisServer, redisPort)
 	}
 	data := <- itemschan
-	key :=  data.Component + " " + strconv.Itoa(data.Id)
+	data.JsondataNormalize(filters)
+	key := data.Component + " " + data.NormalizedMessage
 	hexHashedKey := fmt.Sprintf("%x",md5.Sum([]byte(key)))
-	redisLogger.Info.Println(key, " -> ", hexHashedKey)
+	redisLogger.Info.Println(hexHashedKey, " -> ", data)
 	value := make(map[string]string)
 	COUNTER := make(map[string]string)
 	COUNTER["COUNTER"] = "1"
@@ -55,10 +54,4 @@ func PutToRedis(redisServer string, redisPort string, filters []*regexp.Regexp, 
 	redisLogger.Info.Println(status, Counter, SetTTL)
 
 
-}
-
-// To strip out the timestamp that comes like Sep 30 14:41:04
-func ApplyFiltersOnMsg(msg string) string {
-
-	return msg
 }
