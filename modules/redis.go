@@ -31,6 +31,9 @@ var redisClient *redis.Client
 
 // PutToRedis will call connectRedis to establish a connection, and use the
 // returned client object to put the struct values into redis after applying filters and ttl.
+// The key to redis would be an md5hash of the normalized message + the hostname, and the values
+// are a COUNTER which is HIncrBy incremented, upon each occurance of the same key, and the value would be
+// a key-value pair of Component and non-normalized Message.
 func PutToRedis(redisServer string, redisPort string, filters []*regexp.Regexp, itemschan chan *Jsondata)  {
 	redisLogger = GoLogger.New("/var/log/gossecer_redis.log")
 
@@ -43,8 +46,8 @@ func PutToRedis(redisServer string, redisPort string, filters []*regexp.Regexp, 
 	hexHashedKey := fmt.Sprintf("%x",md5.Sum([]byte(key)))
 	redisLogger.Info.Println(key, " -> ", hexHashedKey)
 	value := make(map[string]string)
-	dummy := make(map[string]string)
-	dummy["COUNTER"] = "1"
+	COUNTER := make(map[string]string)
+	COUNTER["COUNTER"] = "1"
 	value[data.Component] = data.Message
 	status := redisClient.HMSet(hexHashedKey,value)
 	Counter := redisClient.HIncrBy(hexHashedKey, "COUNTER", int64(1))

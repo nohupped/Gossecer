@@ -7,8 +7,14 @@ import (
 	"sync"
 	"encoding/json"
 	"bytes"
+	"regexp"
+	"fmt"
 )
 
+// Jsondata struct is used to populate from the ossec forwarded udp datagrams
+// into their respective fields. Message holds the actual string, whereas
+// NormalizedMessage contains the message that is stripped out of timestamps, IPs, portnumbers, etc.
+// based on the filters.
 type Jsondata struct {
 	Crit           int `json:"crit"`
 	Id             int `json:"id"`
@@ -16,8 +22,18 @@ type Jsondata struct {
 	Classification string `json:"classification"`
 	Description    string `json:"description"`
 	Message        string `json:"message"`
-	message string // normalised message
+	NormalizedMessage string // normalised message
 }
+
+// JsondataNormalize will read the Message variable in the struct Jsondata, normalize it and
+// puts the normalized string into NormalizedMessage field.
+func (d *Jsondata) JsondataNormalize(regexps []*regexp.Regexp)  {
+	for _, i := range regexps {
+		// Todo
+		fmt.Println(i)
+	}
+}
+
 var udplogger *GoLogger.LogIt
 var syshostname string
 

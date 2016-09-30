@@ -50,7 +50,12 @@ func main() {
 	itemschan := make(chan *modules.Jsondata, 1024)
 	wg := new(sync.WaitGroup)
 	wg.Add(1)
+	// Starts a udp server on the respective IP/PORT extracted from ossec config, and writes the datagrams to the
+	// channel itemschan, all from a separate goroutine
 	go modules.StartUdpServer(host, ip, hostname, itemschan, wg)
+
+	// The below closure will read continuously from the itemschan in another separate goroutine, normalize it, and
+	// puts it to redis applying the normalizing filters and ttl.
 	go func() {
 		for ; ; {
 			modules.PutToRedis(redisServer.MustString("localhost"), redisPort.MustString("6379"),  regexps, itemschan)
