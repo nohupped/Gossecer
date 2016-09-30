@@ -3,7 +3,7 @@ Ossec syslog aggregator written in go
 
 ####Sample `ini` file:
 
-`[ossec]
+```[ossec]
  ConfFile = /home/girishg/ossec.conf
  [redis]
  Server = localhost
@@ -12,4 +12,4 @@ Ossec syslog aggregator written in go
  ip = ^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$
  
  #expire sets individual expire times for rule id
- [expire]`
+ [expire]```
