@@ -18,6 +18,12 @@ ip = (?:[0-9]{1,3}\.){3}[0-9]{1,3}
 datetime = [A-Z]{1}[a-z]{2}?\s+\d?\s+(\d{2}\:){2}\d{2}
 
 #expire sets individual expire times for rule id
+#expire sets individual expire times for alerts from individual rule id
 [expire]
+#RuleID = expire ttl(in seconds)
+
+5501 = 20
+5402 = 200
+5502 = 100
 
 ```

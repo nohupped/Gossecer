@@ -7,6 +7,7 @@ import (
 	"crypto/md5"
 	"time"
 	"regexp"
+	"strconv"
 )
 
 var redisLogger *GoLogger.LogIt
@@ -27,13 +28,14 @@ func connectRedis(redisServer string, redisPort string)  *redis.Client{
 }
 
 var redisClient *redis.Client
+type Key map[int]int
 
 // PutToRedis will call connectRedis to establish a connection, and use the
 // returned client object to put the struct values into redis after applying filters and ttl.
 // The key to redis would be an md5hash of the hostname + the normalized message, and the values
 // are a COUNTER which is HIncrBy incremented, upon each occurance of the same key, and the value would be
 // a key-value pair of Component and non-normalized Message.
-func PutToRedis(redisServer string, redisPort string, filters []*regexp.Regexp, itemschan chan *Jsondata)  {
+func PutToRedis(redisServer string, redisPort string, filters []*regexp.Regexp, expire []Key, itemschan chan *Jsondata)  {
 	redisLogger = GoLogger.New("/var/log/gossecer_redis.log")
 
 	if redisClient == nil {
@@ -44,14 +46,36 @@ func PutToRedis(redisServer string, redisPort string, filters []*regexp.Regexp, 
 	key := data.Component + " " + data.NormalizedMessage
 	hexHashedKey := fmt.Sprintf("%x",md5.Sum([]byte(key)))
 	redisLogger.Info.Println(hexHashedKey, " -> ", data)
-	value := make(map[string]string)
-	COUNTER := make(map[string]string)
+	type values map[string]string
+	msg := values{}
+	COUNTER := values{}
+	ruleset := values{}
 	COUNTER["COUNTER"] = "1"
-	value[data.Component] = data.Message
-	status := redisClient.HMSet(hexHashedKey,value)
+	msg[data.Component] = data.Message
+	ruleset["RULE"] = strconv.Itoa(data.Id)
+	hashmsg := redisClient.HMSet(hexHashedKey, msg)
+	rule := redisClient.HMSet(hexHashedKey, ruleset)
 	Counter := redisClient.HIncrBy(hexHashedKey, "COUNTER", int64(1))
-	SetTTL := redisClient.Expire(hexHashedKey, time.Second*60)
-	redisLogger.Info.Println(status, Counter, SetTTL)
+	var SetTTL *redis.BoolCmd
+	SetTTL = redisClient.Expire(hexHashedKey, time.Second * 300) // default ttl
+	// Checking length of [expire] section to zero
+	if len(expire) != 0 {
+		// Setting custom TTL based on rule ID.
+		Outer:
+		for _, i := range expire {
+			for k, v := range i {
+				if k == data.Id {
+					SetTTL = redisClient.Expire(hexHashedKey, time.Second * time.Duration(v))
+					break Outer
+				}
+			}
+		}
+	}
+
+	redisLogger.Info.Println("HASHMSG -> ", hashmsg,
+		"\nCOUNTER ->", Counter,
+		"\nSETTL ->", SetTTL,
+		"\nRULE ->", rule, "\n\n")
 
 
 }

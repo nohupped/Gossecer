@@ -7,6 +7,7 @@ import (
 	"sync"
 	"os"
 	"regexp"
+	"strconv"
 )
 func main() {
 	// Flags and Variable declaration
@@ -41,6 +42,28 @@ func main() {
 	for _, i := range filters_keys {
 		regexps = append(regexps, regexp.MustCompile(i.MustString("")))
 	}
+
+	// Expire
+	ExpireGlobal, err := configfile.GetSection("expire")
+	modules.CheckError(err)
+	expire_keys := ExpireGlobal.KeysHash()
+
+	keys := make([]modules.Key, 0)
+	if len(expire_keys) == 0 {
+		keys = nil
+	} else {
+		for k, v := range expire_keys {
+			tmpkey := modules.Key{}
+			tmpconvertedkey, err := strconv.Atoi(k)
+			tmpconvertedval, err := strconv.Atoi(v)
+			modules.CheckError(err)
+			tmpkey[tmpconvertedkey] = tmpconvertedval
+			keys = append(keys, tmpkey)
+		}
+	}
+	//var expire []string
+
+
 	// End of variable declaration
 
 	mylogger.Info.Println("Parsing ", ossecConf.String())
@@ -58,7 +81,8 @@ func main() {
 	// puts it to redis applying the normalizing filters and ttl.
 	go func() {
 		for ; ; {
-			modules.PutToRedis(redisServer.MustString("localhost"), redisPort.MustString("6379"),  regexps, itemschan)
+			modules.PutToRedis(redisServer.MustString("localhost"), redisPort.MustString("6379"),
+				regexps, keys, itemschan)
 		}
 	}()
 	wg.Wait()
