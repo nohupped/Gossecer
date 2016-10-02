@@ -55,6 +55,7 @@ func main() {
 		for k, v := range expire_keys {
 			tmpkey := modules.Key{}
 			tmpconvertedkey, err := strconv.Atoi(k)
+			modules.CheckError(err)
 			tmpconvertedval, err := strconv.Atoi(v)
 			modules.CheckError(err)
 			tmpkey[tmpconvertedkey] = tmpconvertedval
