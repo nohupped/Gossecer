@@ -71,7 +71,8 @@ func main() {
 	host, ip :=modules.GetOSSecConfig(ossecConf.MustString("/var/ossec/etc/ossec.conf"))
 
 	mylogger.Info.Println("Starting UDP server on ", host, ip, "for", hostname)
-	itemschan := make(chan *modules.Jsondata, 1024)
+	itemschan := make(chan *modules.Jsondata, 10240)
+	alertsChan := make(chan *modules.AlertData, 10240)
 	wg := new(sync.WaitGroup)
 	wg.Add(1)
 	// Starts a udp server on the respective IP/PORT extracted from ossec config, and writes the datagrams to the
@@ -83,8 +84,15 @@ func main() {
 	go func() {
 		for ; ; {
 			modules.PutToRedis(redisServer.MustString("localhost"), redisPort.MustString("6379"),
-				regexps, keys, itemschan)
+				regexps, keys, itemschan, alertsChan)
 		}
 	}()
+
+	go func() {
+		for ; ; {
+			modules.SendALert(alertsChan)
+		}
+	}()
+
 	wg.Wait()
 }
