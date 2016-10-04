@@ -28,8 +28,9 @@ type Jsondata struct {
 // JsondataNormalize method will read the Message variable in the struct Jsondata, normalize it and
 // puts the normalized string into NormalizedMessage field.
 func (d *Jsondata) JsondataNormalize(regexps []*regexp.Regexp)  {
+	d.NormalizedMessage = d.Message
 	for _, i := range regexps {
-		d.NormalizedMessage = i.ReplaceAllString(d.Message, "")
+		d.NormalizedMessage = i.ReplaceAllString(d.NormalizedMessage, "")
 	}
 }
 
