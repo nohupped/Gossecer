@@ -23,6 +23,7 @@ type Jsondata struct {
 	Message        string `json:"message"`
 	NormalizedMessage string // normalised message
 	HashKey		string // The md5 hash value
+	Counter      	int  // The current counter taken from redis
 }
 
 // JsondataNormalize method will read the Message variable in the struct Jsondata, normalize it and

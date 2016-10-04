@@ -62,9 +62,25 @@ func main() {
 			keys = append(keys, tmpkey)
 		}
 	}
-	//var expire []string
 
-
+	//Threshold
+	ThresholdGlobal, err := configfile.GetSection("threshold")
+	modules.CheckError(err)
+	thresholdkeys := ThresholdGlobal.KeysHash()
+	threshold := make([]modules.Key, 0)
+	if len(thresholdkeys) == 0 {
+		threshold = nil
+	} else {
+		for k, v := range thresholdkeys {
+			tmpkey := modules.Key{}
+			tmpconvertedkey, err := strconv.Atoi(k)
+			modules.CheckError(err)
+			tmpconvertedval, err := strconv.Atoi(v)
+			modules.CheckError(err)
+			tmpkey[tmpconvertedkey] = tmpconvertedval
+			threshold = append(threshold, tmpkey)
+		}
+	}
 	// End of variable declaration
 
 	mylogger.Info.Println("Parsing ", ossecConf.String())
@@ -72,7 +88,7 @@ func main() {
 
 	mylogger.Info.Println("Starting UDP server on ", host, ip, "for", hostname)
 	itemschan := make(chan *modules.Jsondata, 10240)
-	alertsChan := make(chan *modules.AlertData, 10240)
+	alertsChan := make(chan *modules.Jsondata, 10240)
 	wg := new(sync.WaitGroup)
 	wg.Add(1)
 	// Starts a udp server on the respective IP/PORT extracted from ossec config, and writes the datagrams to the
@@ -90,7 +106,7 @@ func main() {
 
 	go func() {
 		for ; ; {
-			modules.SendALert(alertsChan)
+			modules.CheckCounter(alertsChan, threshold)
 		}
 	}()
 

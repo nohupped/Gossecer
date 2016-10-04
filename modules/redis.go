@@ -29,16 +29,14 @@ func connectRedis(redisServer string, redisPort string)  *redis.Client{
 
 var redisClient *redis.Client
 type Key map[int]int
-type AlertData map[*Jsondata]*redis.StringStringMapCmd
 
 // PutToRedis will call connectRedis to establish a connection, and use the
 // returned client object to put the struct values into redis after applying filters and ttl.
 // The key to redis would be an md5hash of the hostname + the normalized message, and the values
 // are a COUNTER which is HIncrBy incremented, upon each occurance of the same key, and the value would be
 // a key-value pair of Component and non-normalized Message.
-func PutToRedis(redisServer string, redisPort string, filters []*regexp.Regexp, expire []Key, itemschan chan *Jsondata, alertschan chan *AlertData)  {
+func PutToRedis(redisServer string, redisPort string, filters []*regexp.Regexp, expire []Key, itemschan chan *Jsondata, alertschan chan *Jsondata)  {
 	redisLogger = GoLogger.New("/var/log/gossecer_redis.log")
-
 	if redisClient == nil {
 		redisClient = connectRedis(redisServer, redisPort)
 	}
@@ -77,7 +75,13 @@ func PutToRedis(redisServer string, redisPort string, filters []*regexp.Regexp, 
 		"\nCOUNTER ->", Counter,
 		"\nSETTL ->", SetTTL,
 		"\nRULE ->", rule, "\n\n")
-	alert := AlertData{}
-	alert[data] = redisClient.HGetAll(data.HashKey)  //Todo, do this only if HGetAll has valid key
-	alertschan <- &alert
+	currentCount := redisClient.HMGet(data.HashKey, "COUNTER")
+	countlist := currentCount.Val()
+	var countint int
+	for _, i := range countlist {
+		countint, _ = strconv.Atoi(i.(string))
+	}
+	data.Counter = countint
+
+	alertschan <- data
 }

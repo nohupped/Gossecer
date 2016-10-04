@@ -1,10 +1,15 @@
 package modules
 
-import "fmt"
+import (
+	"fmt"
+)
 
-// SendAlert receives map[*Jsondata]*redis.StringStringMapCmd which contains the ossec data struct
-// and the redis data that is stored, for furthur breakdown and write to a socket.
-func SendALert(alertschan chan *AlertData)  {
+
+// CheckCounter receives *Jsondata which contains the ossec data struct
+// and compares it against the redis hashed key's counter. Uses the same
+// redisClient connection used in PutToRedis.
+func CheckCounter(alertschan chan *Jsondata, threshold []Key)  {
 	Alert := <- alertschan
-	fmt.Println(Alert)
+	fmt.Println(Alert.Counter)
+
 }
