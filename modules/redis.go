@@ -29,6 +29,7 @@ func connectRedis(redisServer string, redisPort string)  *redis.Client{
 
 var redisClient *redis.Client
 type Key map[int]int
+type values map[string]string
 
 // PutToRedis will call connectRedis to establish a connection, and use the
 // returned client object to put the struct values into redis after applying filters and ttl.
@@ -45,11 +46,10 @@ func PutToRedis(redisServer string, redisPort string, filters []*regexp.Regexp, 
 	key := data.Component + " " + data.NormalizedMessage
 	data.HashKey = fmt.Sprintf("%x",md5.Sum([]byte(key)))
 	redisLogger.Info.Println(data.HashKey, " -> ", data)
-	type values map[string]string
 	msg := values{}
-	COUNTER := values{}
+//	COUNTER := values{}
 	ruleset := values{}
-	COUNTER["COUNTER"] = "1"
+//	COUNTER["COUNTER"] = "1"
 	msg[data.Component] = data.Message
 	ruleset["RULE"] = strconv.Itoa(data.Id)
 	hashmsg := redisClient.HMSet(data.HashKey, msg)

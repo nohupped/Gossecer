@@ -81,6 +81,15 @@ func main() {
 			threshold = append(threshold, tmpkey)
 		}
 	}
+
+	// Alert configuration
+	AlertsGlobal, err := configfile.GetSection("alert")
+	modules.CheckError(err)
+	alerthost, err := AlertsGlobal.GetKey("host")
+	modules.CheckError(err)
+	alertport, err := AlertsGlobal.GetKey("port")
+	modules.CheckError(err)
+
 	// End of variable declaration
 
 	mylogger.Info.Println("Parsing ", ossecConf.String())
@@ -88,7 +97,8 @@ func main() {
 
 	mylogger.Info.Println("Starting UDP server on ", host, ip, "for", hostname)
 	itemschan := make(chan *modules.Jsondata, 10240)
-	alertsChan := make(chan *modules.Jsondata, 10240)
+	counterchan := make(chan *modules.Jsondata, 10240)
+	alertschan := make(chan *modules.Jsondata, 10240)
 	wg := new(sync.WaitGroup)
 	wg.Add(1)
 	// Starts a udp server on the respective IP/PORT extracted from ossec config, and writes the datagrams to the
@@ -100,13 +110,19 @@ func main() {
 	go func() {
 		for ; ; {
 			modules.PutToRedis(redisServer.MustString("localhost"), redisPort.MustString("6379"),
-				regexps, keys, itemschan, alertsChan)
+				regexps, keys, itemschan, counterchan)
 		}
 	}()
 
 	go func() {
 		for ; ; {
-			modules.CheckCounter(alertsChan, threshold)
+			modules.CheckCounter(counterchan, threshold, alertschan)
+		}
+	}()
+
+	go func() {
+		for ; ; {
+			modules.SendAlert(alertschan, alerthost.MustString("localhost"), alertport.MustString("8888"))
 		}
 	}()
 

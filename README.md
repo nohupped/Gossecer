@@ -29,7 +29,7 @@ tag = [a-zA-Z]+\[[0-9]+\]
 5502 = 600
 5710 = 600
 
-# Set individual threshold based on rule id. Defaults to 5 numbers.
+# Set individual threshold based on rule id. Defaults to 10 numbers.
 # Eg: If you want an alert for rule 5501 when the threshold crosses 10 in the last 10 minutes,
 # set [expire] to 600 for 5501, and [threshold] to 10 for 5501.
 
@@ -38,5 +38,10 @@ tag = [a-zA-Z]+\[[0-9]+\]
 5402 = 10
 5501 = 10
 5710 = 5
+
+[alert]
+host = localhost
+port = 8888
+
 
 ```
