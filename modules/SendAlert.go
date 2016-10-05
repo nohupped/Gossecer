@@ -55,11 +55,10 @@ func SendAlert(alertschan chan *Jsondata,alertHost string, alertPort string) {
 	Alert := <- alertschan
 
 	if conn == nil {
-		fmt.Println("Starting alert message")
 		conn = StartAlert(alertHost, alertPort)
 	}
 
-	alertMessage := []byte(fmt.Sprintf("Hostname:%s SyslogCrit:%d Rule:%d Message:%s Times alerted:%d", Alert.Component, Alert.Crit, Alert.Id, Alert.Message, Alert.Alerted))
+	alertMessage := []byte(fmt.Sprintf("Hostname:%s SyslogCrit:%d Rule:%d Message:%s Times alerted:%d\n", Alert.Component, Alert.Crit, Alert.Id, Alert.Message, Alert.Alerted))
 	length, err := conn.Write(alertMessage)
 	if err != nil {
 		alertLogger.Err.Println(err)

@@ -14,6 +14,7 @@ func main() {
 	mylogger := GoLogger.New("/var/log/gossecer.log")
 	defer mylogger.Close()
 	hostname, err := os.Hostname()
+	mylogger.Info.Println("Hostname taken as ", hostname)
 	modules.CheckError(err)
 	configfileparam := flag.String("config", "/etc/gossec.conf", "The program's main configuration file")
 	flag.Parse()
