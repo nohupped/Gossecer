@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/nohupped/GoLogger"
-	"Gossecer/modules"
+	"github.com/nohupped/Gossecer/modules"
 	"flag"
 	"sync"
 	"os"
@@ -115,12 +115,17 @@ func main() {
 		}
 	}()
 
+	// The below closure will read continuously from the counterchan and check the counter in redis to see if the
+	// specified key's counter has breached the configured threshold, and if breached, it will set one more
+	// HIncrBy key to track the times it is alerted, populate the struct variable Alerted, and write to alertschan.
 	go func() {
 		for ; ; {
 			modules.CheckCounter(counterchan, threshold, alertschan)
 		}
 	}()
 
+	// The below closure will read continuously from the alertschan continuously and whatever alert is being sent
+	// to the alertschan is sent to a configured udp socket.
 	go func() {
 		for ; ; {
 			modules.SendAlert(alertschan, alerthost.MustString("localhost"), alertport.MustString("8888"))

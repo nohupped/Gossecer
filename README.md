@@ -45,3 +45,12 @@ port = 8888
 
 
 ```
+
+####Sample Output as read with netcat:
+```
+$> nc -ul -p 8888
+{"EventOccurance":363,"EventThreshold":15,"Hostname":"SERVER1-\u003e127.0.0.1","Message":"Oct  7 10:27:00 SERVER1 sshd[1960]: Accepted password for SOMEUSER from 10.10.10.10 port 21064 ssh2","RuleID":5715,"Syslogcrit":3,"TimesAlerted":349}
+{"EventOccurance":2633,"EventThreshold":10,"Hostname":"SERVER-1-\u003e127.0.0.1","Message":"Oct  7 10:27:01 SERVER-1 CROND[24743]: pam_unix(cron:session): session opened for user root by (uid=0)","RuleID":5501,"Syslogcrit":3,"TimesAlerted":2624}
+```
+
+Consuming script can use a modulus on ```TimesAlerted``` value to decide on the frequency of triggering alerts.

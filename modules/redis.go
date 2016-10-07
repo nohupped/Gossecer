@@ -45,18 +45,22 @@ func PutToRedis(redisServer string, redisPort string, filters []*regexp.Regexp, 
 	data.JsondataNormalize(filters)
 	key := data.Component + " " + data.NormalizedMessage
 	data.HashKey = fmt.Sprintf("%x",md5.Sum([]byte(key)))
-	redisLogger.Info.Println(data.HashKey, " -> ", data)
+	//redisLogger.Info.Println(data.HashKey, " -> ", data)
 	msg := values{}
 //	COUNTER := values{}
 	ruleset := values{}
 //	COUNTER["COUNTER"] = "1"
 	msg[data.Component] = data.Message
 	ruleset["RULE"] = strconv.Itoa(data.Id)
-	hashmsg := redisClient.HMSet(data.HashKey, msg)
-	rule := redisClient.HMSet(data.HashKey, ruleset)
-	Counter := redisClient.HIncrBy(data.HashKey, "COUNTER", int64(1))
-	var SetTTL *redis.BoolCmd
-	SetTTL = redisClient.Expire(data.HashKey, time.Second * 300) // default ttl
+	//hashmsg := redisClient.HMSet(data.HashKey, msg)
+	redisClient.HMSet(data.HashKey, msg)
+	//rule := redisClient.HMSet(data.HashKey, ruleset)
+	redisClient.HMSet(data.HashKey, ruleset)
+	//Counter := redisClient.HIncrBy(data.HashKey, "COUNTER", int64(1))
+	redisClient.HIncrBy(data.HashKey, "COUNTER", int64(1))
+	//var SetTTL *redis.BoolCmd
+	//SetTTL = redisClient.Expire(data.HashKey, time.Second * 300) // default ttl
+	redisClient.Expire(data.HashKey, time.Second * 300) // default ttl
 	// Checking length of [expire] section to zero
 	if len(expire) != 0 {
 		// Setting custom TTL based on rule ID.
@@ -64,17 +68,17 @@ func PutToRedis(redisServer string, redisPort string, filters []*regexp.Regexp, 
 		for _, i := range expire {
 			for k, v := range i {
 				if k == data.Id {
-					SetTTL = redisClient.Expire(data.HashKey, time.Second * time.Duration(v))
+					redisClient.Expire(data.HashKey, time.Second * time.Duration(v))
 					break Outer
 				}
 			}
 		}
 	}
 
-	redisLogger.Info.Println("HASHMSG -> ", hashmsg,
+/*	redisLogger.Info.Println("HASHMSG -> ", hashmsg,
 		"\nCOUNTER ->", Counter,
 		"\nSETTL ->", SetTTL,
-		"\nRULE ->", rule, "\n\n")
+		"\nRULE ->", rule, "\n\n")*/
 	currentCount := redisClient.HMGet(data.HashKey, "COUNTER")
 	countlist := currentCount.Val()
 	var countint int

@@ -2,8 +2,8 @@ package modules
 
 import (
 	"github.com/nohupped/GoLogger"
-	"fmt"
 	"net"
+	"encoding/json"
 )
 
 var alertLogger *GoLogger.LogIt
@@ -32,13 +32,15 @@ func CheckCounter(counterchan chan *Jsondata, threshold []Key, alertschan chan *
 		Alert.Alerted, _ = Counter.Result()
 		alertschan <- Alert
 	}
-	alertLogger.Info.Println("RuleID -->", Alert.Id)
+/*	alertLogger.Info.Println("RuleID -->", Alert.Id)
 	alertLogger.Info.Println("Message -->", Alert.Message)
 	alertLogger.Info.Println("Counter -->", Alert.Counter)
 	alertLogger.Info.Println("Threshold -->", Alert.Threshold)
+	*/
 
 }
 
+// StartAlert will create a udp connection object and returns it.
 func StartAlert(alertHost string, alertPort string) *net.UDPConn {
 	host := alertHost + ":" + alertPort
 	RemoteAddr, err := net.ResolveUDPAddr("udp", host)
@@ -49,21 +51,28 @@ func StartAlert(alertHost string, alertPort string) *net.UDPConn {
 
 }
 
+// conn is defined globally because if it is defined inside the function, it will open a new socket for every alert.
 var conn *net.UDPConn
 
+// SendAlert will use StartAlert() to send alerts that met the configured threshold to the configured UDP port.
+// A different program can be used to read these datagrams from the port to send to any alerting mechanism.
 func SendAlert(alertschan chan *Jsondata,alertHost string, alertPort string) {
 	Alert := <- alertschan
 
 	if conn == nil {
 		conn = StartAlert(alertHost, alertPort)
 	}
+	alert := map[string]interface{}{"Hostname" : Alert.Component, "Syslogcrit": Alert.Crit,
+		"EventOccurance": Alert.Counter, "EventThreshold": Alert.Threshold, "RuleID": Alert.Id,
+		"TimesAlerted": Alert.Alerted, "Message": Alert.Message}
+	alertjson, _ := json.Marshal(&alert)
 
-	alertMessage := []byte(fmt.Sprintf("Hostname:%s SyslogCrit:%d Rule:%d Message:%s Times alerted:%d\n", Alert.Component, Alert.Crit, Alert.Id, Alert.Message, Alert.Alerted))
-	length, err := conn.Write(alertMessage)
+	//length, err := conn.Write(alertMessage)
+	_, err := conn.Write(alertjson)
 	if err != nil {
 		alertLogger.Err.Println(err)
 	}
-	alertLogger.Info.Println(length, "bytes sent..")
+//	alertLogger.Info.Println(length, "bytes sent..")
 
 
 

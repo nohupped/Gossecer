@@ -64,15 +64,16 @@ func StartUdpServer(host string, port int, hostname string, itemschan chan *Json
 func handleUDP(conn *net.UDPConn) *Jsondata{
 	buffer := make([]byte, 65507)
 	jsonstring := new(Jsondata)
-	n, addr, err := conn.ReadFromUDP(buffer)
+	//n, addr, err := conn.ReadFromUDP(buffer)
+	n, _, err := conn.ReadFromUDP(buffer)
 	leanbuf := buffer[:n] //stripping off any unwanted bytes at the end
 
 	// Doing the below shit because for the string "<132>Sep 29 10:04:10 myhostname ossec: {"crit":2,"..., it has to
 	// be split with the pattern myhostname ossec: to get the proper json.
 	splitbytes := bytes.Split(leanbuf, []byte((syshostname + " ossec: ")))
-	udplogger.Info.Println("Client: ", addr)
+//	udplogger.Info.Println("Client: ", addr)
 	CheckError(err)
-	udplogger.Info.Println(string(buffer[:n]))
+//	udplogger.Info.Println(string(buffer[:n]))
 	json.Unmarshal(splitbytes[1], &jsonstring)
 	return jsonstring
 }
