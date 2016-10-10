@@ -58,6 +58,7 @@ func PutToRedis(redisServer string, redisPort string, filters []*regexp.Regexp, 
 	redisClient.HMSet(data.HashKey, ruleset)
 	//Counter := redisClient.HIncrBy(data.HashKey, "COUNTER", int64(1))
 	redisClient.HIncrBy(data.HashKey, "COUNTER", int64(1))
+	redisClient.HIncrBy(data.HashKey, "TotalCount", int64(1))
 	//var SetTTL *redis.BoolCmd
 	//SetTTL = redisClient.Expire(data.HashKey, time.Second * 300) // default ttl
 	redisClient.Expire(data.HashKey, time.Second * 300) // default ttl
@@ -80,12 +81,19 @@ func PutToRedis(redisServer string, redisPort string, filters []*regexp.Regexp, 
 		"\nSETTL ->", SetTTL,
 		"\nRULE ->", rule, "\n\n")*/
 	currentCount := redisClient.HMGet(data.HashKey, "COUNTER")
+	totalCount := redisClient.HMGet(data.HashKey, "TotalCount")
+	totalcountlist := totalCount.Val()
 	countlist := currentCount.Val()
 	var countint int
+	var totalcountint int
 	for _, i := range countlist {
 		countint, _ = strconv.Atoi(i.(string))
 	}
+	for _, i := range totalcountlist {
+		totalcountint, _ = strconv.Atoi(i.(string))
+	}
 	data.Counter = countint
+	data.TotalCount = totalcountint
 
 	alertschan <- data
 }

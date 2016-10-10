@@ -26,6 +26,7 @@ type Jsondata struct {
 	Counter      	int  // The current counter taken from redis
 	Threshold 	int  // The actual threshold to be breached by counter to mark it as an alert.
 	Alerted		int64  // A counter to keep track of how many times alerts are sent.
+	TotalCount	int // A counter to keep track of the total count of alerts before it is expired in redis.
 }
 
 // JsondataNormalize method will read the Message variable in the struct Jsondata, normalize it and

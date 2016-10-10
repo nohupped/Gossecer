@@ -62,9 +62,9 @@ func SendAlert(alertschan chan *Jsondata,alertHost string, alertPort string) {
 	if conn == nil {
 		conn = StartAlert(alertHost, alertPort)
 	}
-	alert := map[string]interface{}{"Hostname" : Alert.Component, "Syslogcrit": Alert.Crit,
-		"EventOccurance": Alert.Counter, "EventThreshold": Alert.Threshold, "RuleID": Alert.Id,
-		"TimesAlerted": Alert.Alerted, "Message": Alert.Message}
+	alert := map[string]interface{}{"Hostname" : Alert.Component, "Syslogcrit": Alert.Crit, "TotalEventOccurance": Alert.TotalCount,
+		"EventOccurance": Alert.Counter, "EventThreshold": Alert.Threshold, "TimesAlerted": Alert.Alerted,
+		"RuleID": Alert.Id, "Message": Alert.Message}
 	alertjson, _ := json.Marshal(&alert)
 
 	//length, err := conn.Write(alertMessage)
@@ -72,6 +72,9 @@ func SendAlert(alertschan chan *Jsondata,alertHost string, alertPort string) {
 	if err != nil {
 		alertLogger.Err.Println(err)
 	}
+//	reset := redisClient.HSet(Alert.HashKey, "COUNTER", "0")
+	redisClient.HSet(Alert.HashKey, "COUNTER", "0")
+//	alertLogger.Info.Println("RESET:", reset)
 //	alertLogger.Info.Println(length, "bytes sent..")
 
 
