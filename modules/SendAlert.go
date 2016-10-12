@@ -4,6 +4,9 @@ import (
 	"github.com/nohupped/GoLogger"
 	"net"
 	"encoding/json"
+	"fmt"
+	"strconv"
+	"time"
 )
 
 var alertLogger *GoLogger.LogIt
@@ -15,6 +18,13 @@ var alertLogger *GoLogger.LogIt
 func CheckCounter(counterchan chan *Jsondata, threshold []Key, alertschan chan *Jsondata)  {
 	alertLogger = GoLogger.New("/var/log/gossecer_alert.log")
 	Alert := <-counterchan
+
+	lrange := redisClient.LRange(Alert.RPush, 0, -1)
+	for _, i := range lrange.Val() {
+		histime, _ := strconv.ParseInt(i, 10, 64)
+		fmt.Println(time.Unix(0, histime))
+	}
+
 	Alert.Threshold = 15 // default value
 
 	Outer:

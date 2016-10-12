@@ -8,6 +8,7 @@ import (
 	"time"
 	"regexp"
 	"strconv"
+	"strings"
 )
 
 var redisLogger *GoLogger.LogIt
@@ -61,7 +62,13 @@ func PutToRedis(redisServer string, redisPort string, filters []*regexp.Regexp, 
 	redisClient.HIncrBy(data.HashKey, "TotalCount", int64(1))
 	//var SetTTL *redis.BoolCmd
 	//SetTTL = redisClient.Expire(data.HashKey, time.Second * 300) // default ttl
-	redisClient.Expire(data.HashKey, time.Second * 300) // default ttl
+	data.RPush = (data.HashKey + ":" + "EventOccurrenceTime")
+	redisClient.RPush(data.RPush, data.CurrentEventOccurrenceTime)
+	redisClient.Expire(data.RPush, time.Second * 300) // default ttl for the rpush key
+	FirstEventOccurrenceTime, _ := strconv.ParseInt(strings.Join(redisClient.LRange(data.RPush, 0, 0).Val(), ""), 10, 64) // Getting the first value of lrange on rpush key and converting it to int64
+	data.FirstEventOccurrenceTime = FirstEventOccurrenceTime
+	redisClient.Expire(data.HashKey, time.Second * 300) // default ttl for the hashkey
+	data.TTL = time.Second * 300
 	// Checking length of [expire] section to zero
 	if len(expire) != 0 {
 		// Setting custom TTL based on rule ID.
@@ -70,16 +77,20 @@ func PutToRedis(redisServer string, redisPort string, filters []*regexp.Regexp, 
 			for k, v := range i {
 				if k == data.Id {
 					redisClient.Expire(data.HashKey, time.Second * time.Duration(v))
+					redisClient.Expire(data.RPush, time.Second * time.Duration(v))
+					data.TTL = time.Second * time.Duration(v)
 					break Outer
 				}
 			}
 		}
 	}
 
+
 /*	redisLogger.Info.Println("HASHMSG -> ", hashmsg,
 		"\nCOUNTER ->", Counter,
 		"\nSETTL ->", SetTTL,
 		"\nRULE ->", rule, "\n\n")*/
+//	fmt.Println("HashMSG -> ", data.HashKey, "\nRuleID ->", data.Id, "\nTTL ->", data.TTL.Nanoseconds(), "\nEventOccuranceTime ->", data.EventOccurrenceTime)
 	currentCount := redisClient.HMGet(data.HashKey, "COUNTER")
 	totalCount := redisClient.HMGet(data.HashKey, "TotalCount")
 	totalcountlist := totalCount.Val()
@@ -94,6 +105,5 @@ func PutToRedis(redisServer string, redisPort string, filters []*regexp.Regexp, 
 	}
 	data.Counter = countint
 	data.TotalCount = totalcountint
-
 	alertschan <- data
 }
