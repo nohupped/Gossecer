@@ -20,12 +20,31 @@ func CheckCounter(counterchan chan *Jsondata, threshold []Key, alertschan chan *
 	Alert := <-counterchan
 
 	lrange := redisClient.LRange(Alert.RPush, 0, -1)
+	ExitTimeCheck:
 	for _, i := range lrange.Val() {
 		histime, _ := strconv.ParseInt(i, 10, 64)
-		fmt.Println(time.Unix(0, histime))
+		if (Alert.CurrentEventOccurrenceTime - histime) >= Alert.TTL.Nanoseconds() {
+			fmt.Println(time.Unix(0, histime), "exceeded TTL time of", Alert.TTL.Nanoseconds(), "for", Alert.HashKey, Alert.RPush)
+			fmt.Println(redisClient.LPop(Alert.RPush)) // Poping the oldest timestamp because it expired, has to decrement COUNTER
+			fmt.Println(redisClient.HIncrBy(Alert.HashKey, "COUNTER", int64(-1))) //Decrementing the COUNTER by 1 each time.
+
+		} else {
+			fmt.Println("Exiting to timecheck")
+			break ExitTimeCheck
+		}
 	}
 
-	Alert.Threshold = 15 // default value
+	// Update the struct's Counter with the current counter value
+	currentCount := redisClient.HMGet(Alert.HashKey, "COUNTER")
+	countlist := currentCount.Val()
+	var countint int
+	for _, i := range countlist {
+		countint, _ = strconv.Atoi(i.(string))
+	}
+	Alert.Counter = countint
+
+	// Setting default threshold
+	Alert.Threshold = 15
 
 	Outer:
 	for _, i := range threshold {
@@ -37,6 +56,7 @@ func CheckCounter(counterchan chan *Jsondata, threshold []Key, alertschan chan *
 		}
 	}
 
+	// Check of Counter has breached the configured Threshold
 	if Alert.Counter >= Alert.Threshold {
 		Counter := redisClient.HIncrBy(Alert.HashKey, "Alerted", int64(1))
 		Alert.Alerted, _ = Counter.Result()
