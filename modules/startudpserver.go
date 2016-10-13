@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"bytes"
 	"regexp"
+	"time"
 )
 
 // Jsondata struct is used to populate from the ossec forwarded udp datagrams
@@ -17,16 +18,20 @@ import (
 type Jsondata struct {
 	Crit           int `json:"crit"`
 	Id             int `json:"id"`
-	Component      string `json:"component"`  //hostname
+	Component      string `json:"component"` //hostname
 	Classification string `json:"classification"`
-	Description    string `json:"description"`
-	Message        string `json:"message"`
-	NormalizedMessage string // normalised message
-	HashKey		string // The md5 hash value
-	Counter      	int  // The current counter taken from redis
-	Threshold 	int  // The actual threshold to be breached by counter to mark it as an alert.
-	Alerted		int64  // A counter to keep track of how many times alerts are sent.
-	TotalCount	int // A counter to keep track of the total count of alerts before it is expired in redis.
+	Description                string `json:"description"`
+	Message                    string `json:"message"`
+	NormalizedMessage          string        // normalised message
+	HashKey                    string        // The md5 hash value
+	Counter                    int           // The current counter taken from redis
+	Threshold                  int           // The actual threshold to be breached by counter to mark it as an alert.
+	Alerted                    int64         // A counter to keep track of how many times alerts are sent.
+	TotalCount                 int           // A counter to keep track of the total count of alerts before it is expired in redis.
+	CurrentEventOccurrenceTime int64         // Epoch value of current event occurrence time in nanoseconds.
+	FirstEventOccurrenceTime int64         // Epoch value of current event occurrence time in nanoseconds.
+	TTL                        time.Duration // The configured TTL for the event, which will be set as the expire for HashKey and RPush keys.
+	RPush                      string        // The rpush key that holds the list of epoch time values
 }
 
 // JsondataNormalize method will read the Message variable in the struct Jsondata, normalize it and
@@ -76,5 +81,6 @@ func handleUDP(conn *net.UDPConn) *Jsondata{
 	CheckError(err)
 //	udplogger.Info.Println(string(buffer[:n]))
 	json.Unmarshal(splitbytes[1], &jsonstring)
+	jsonstring.CurrentEventOccurrenceTime = time.Now().UnixNano()
 	return jsonstring
 }
