@@ -4,9 +4,7 @@ import (
 	"github.com/nohupped/GoLogger"
 	"net"
 	"encoding/json"
-	"fmt"
 	"strconv"
-	"time"
 )
 
 var alertLogger *GoLogger.LogIt
@@ -24,12 +22,12 @@ func CheckCounter(counterchan chan *Jsondata, threshold []Key, alertschan chan *
 	for _, i := range lrange.Val() {
 		histime, _ := strconv.ParseInt(i, 10, 64)
 		if (Alert.CurrentEventOccurrenceTime - histime) >= Alert.TTL.Nanoseconds() {
-			fmt.Println(time.Unix(0, histime), "exceeded TTL time of", Alert.TTL.Nanoseconds(), "for", Alert.HashKey, Alert.RPush)
-			fmt.Println(redisClient.LPop(Alert.RPush)) // Poping the oldest timestamp because it expired, has to decrement COUNTER
-			fmt.Println(redisClient.HIncrBy(Alert.HashKey, "COUNTER", int64(-1))) //Decrementing the COUNTER by 1 each time.
+			//fmt.Println(time.Unix(0, histime), "exceeded TTL time of", Alert.TTL.Nanoseconds(), "for", Alert.HashKey, Alert.RPush)
+			redisClient.LPop(Alert.RPush) // Poping the oldest timestamp because it expired, has to decrement COUNTER
+			redisClient.HIncrBy(Alert.HashKey, "COUNTER", int64(-1)) //Decrementing the COUNTER by 1 each time.
 
 		} else {
-			fmt.Println("Exiting to timecheck")
+			//fmt.Println("Exiting to timecheck")
 			break ExitTimeCheck
 		}
 	}
