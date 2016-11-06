@@ -1,7 +1,8 @@
 # Gossecer
 Ossec syslog aggregator written in go
 
-####Requires redis installed. Find more in the Wiki page.
+####Requires redis installed. Find more in the [wiki](https://github.com/nohupped/Gossecer/wiki)
+.
 
 ####Sample `ini` file:
 
